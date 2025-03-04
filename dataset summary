@@ -1,0 +1,37 @@
+import os
+import pandas as pd
+
+# Ensure processed data directory exists
+os.makedirs("data/processed", exist_ok=True)
+
+# Define dataset paths (update if filenames differ)
+DATASETS = {
+    "ACS": "data/raw/ACS.zip",
+    "NOAA": "data/raw/NOAA.csv"
+}
+
+def process_dataset(name, file_path):
+    """Basic processing: check if the dataset exists and generate a summary."""
+    if not os.path.exists(file_path):
+        print(f"Skipping {name}: File not found.")
+        return None
+    
+    # Attempt to read CSV (if applicable)
+    if file_path.endswith(".csv"):
+        df = pd.read_csv(file_path)
+        summary = df.describe(include="all")  # Summary stats
+        missing = df.isnull().sum()  # Missing values count
+        
+        # Save results
+        summary.to_csv(f"data/processed/{name}_summary.csv", index=False)
+        missing.to_csv(f"data/processed/{name}_missing.csv", index=True)
+        print(f"Processed {name}: Summary and missing data saved.")
+
+    else:
+        print(f"Skipping {name}: Unsupported file format.")
+
+# Process each dataset
+for dataset, path in DATASETS.items():
+    process_dataset(dataset, path)
+
+print("\n Data preprocessing complete!")
