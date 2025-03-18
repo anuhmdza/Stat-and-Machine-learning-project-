@@ -1,15 +1,17 @@
-
+import requests
 import pandas as pd
 from census import Census
 from us import states
 
-# Use API key here
-API_KEY = "fe6843e76d70b7f6bcc3ad4885d926a06f69c5c4"
+# NOAA and Census API Keys
+NOAA_API_KEY = "sxEfqUsOUVVRtChzIUbUtonoHczxjuLC"
+CENSUS_API_KEY = "fe6843e76d70b7f6bcc3ad4885d926a06f69c5c4"
 
+# ------------------- Census Data Retrieval ------------------- #
 # Initialize Census API
-c = Census(API_KEY)
+c = Census(CENSUS_API_KEY)
 
-# Define the state (Example: Texas)
+# Define the state (Texas)
 state_fips = states.TX.fips  # Texas FIPS code
 
 # Retrieve ACS 5-Year Data for Income & Healthcare Access (2022)
@@ -30,8 +32,37 @@ df_acs.rename(columns={
     "B27010_001E": "Health_Insurance_Coverage"
 }, inplace=True)
 
-# Display the data
-print(df_acs.head())
-
 # Save to CSV
 df_acs.to_csv("acs_socioeconomic_data.csv", index=False)
+
+# ------------------- NOAA Climate Data Retrieval ------------------- #
+# NOAA API endpoint
+BASE_URL = "https://www.ncdc.noaa.gov/cdo-web/api/v2/data"
+
+# Define request parameters
+params = {
+    "datasetid": "GHCND",           # Global Historical Climatology Network - Daily
+    "stationid": "GHCND:USW00012960",  # Example station (Houston, TX)
+    "startdate": "2023-01-01",
+    "enddate": "2023-12-31",
+    "datatypeid": ["TMAX", "TMIN", "PRCP"],  # Max Temp, Min Temp, Precipitation
+    "limit": 1000,
+}
+
+# Set API headers
+headers = {"token": NOAA_API_KEY}
+
+# Make API request
+response = requests.get(BASE_URL, headers=headers, params=params)
+
+# Check response status
+if response.status_code == 200:
+    data = response.json()
+    if "results" in data:
+        df_climate = pd.DataFrame(data["results"])
+        df_climate.to_csv("noaa_climate_data.csv", index=False)
+        print(df_climate.head())  # Preview data
+    else:
+        print("No climate data found.")
+else:
+    print(f"Error: {response.status_code} - {response.text}")
