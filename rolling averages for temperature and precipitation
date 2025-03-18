@@ -1,0 +1,14 @@
+df_noaa["TMAX_7D_Avg"] = tmax_data["measurement_value"].rolling(window=7).mean()
+df_noaa["TMIN_7D_Avg"] = tmin_data["measurement_value"].rolling(window=7).mean()
+df_noaa["PRCP_7D_Avg"] = prcp_data["measurement_value"].rolling(window=7).mean()
+
+# Plot rolling averages
+plt.figure(figsize=(10, 5))
+df_noaa["TMAX_7D_Avg"].plot(label="7-Day Avg Max Temp", color="red")
+df_noaa["TMIN_7D_Avg"].plot(label="7-Day Avg Min Temp", color="blue")
+df_noaa["PRCP_7D_Avg"].plot(label="7-Day Avg Precipitation", color="green")
+plt.title("7-Day Rolling Average Climate Data")
+plt.xlabel("Date")
+plt.ylabel("Temperature (°F) / Precipitation (mm)")
+plt.legend()
+plt.show()
