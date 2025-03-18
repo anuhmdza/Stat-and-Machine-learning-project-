@@ -1,0 +1,30 @@
+def detect_anomalies(df, column, threshold=2.5):
+    mean = df[column].mean()
+    std = df[column].std()
+    
+    # Identify anomalies where value deviates more than `threshold` standard deviations
+    anomalies = df[(df[column] > mean + threshold * std) | (df[column] < mean - threshold * std)]
+    
+    return anomalies
+
+
+tmax_anomalies = detect_anomalies(tmax_data, "measurement_value")
+prcp_anomalies = detect_anomalies(prcp_data, "measurement_value")
+
+print("Extreme Temperature Anomalies:")
+print(tmax_anomalies.head())
+
+print("Extreme Precipitation Anomalies:")
+print(prcp_anomalies.head())
+
+# Plot anomalies
+plt.figure(figsize=(10, 5))
+plt.plot(tmax_data.index, tmax_data["measurement_value"], label="Max Temp", alpha=0.6)
+plt.scatter(tmax_anomalies.index, tmax_anomalies["measurement_value"], color="red", label="Anomalies", marker="x")
+plt.title("Temperature Anomalies in Houston (2023)")
+plt.xlabel("Date")
+plt.ylabel("Temperature (°F)")
+plt.legend()
+plt.show()
+#Detects extreme temperature and precipitation anomalies based on standard deviation.
+#Useful for investigating heatwaves, cold spells, and heavy rainfall events.
