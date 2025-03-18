@@ -1,0 +1,29 @@
+import pandas as pd
+
+def clean_noaa_data(file_path):
+    # Load the dataset
+    df = pd.read_csv(file_path)
+    
+    # Standardize column names (lowercase & replace spaces)
+    df.columns = df.columns.str.lower().str.replace(" ", "_")
+    
+    # Handle missing values
+    df.dropna(inplace=True)  # Drop rows with missing values (or use fillna)
+    
+    # Convert date column to datetime (if applicable)
+    if 'date' in df.columns:
+        df['date'] = pd.to_datetime(df['date'])
+    
+    # Rename columns for clarity
+    df.rename(columns={
+        "datatype": "measurement_type",
+        "value": "measurement_value"
+    }, inplace=True)
+    
+    return df
+
+# Clean and save NOAA data
+df_noaa_clean = clean_noaa_data("noaa_climate_data.csv")
+df_noaa_clean.to_csv("noaa_climate_data_clean.csv", index=False)
+print(df_noaa_clean.head())
+
