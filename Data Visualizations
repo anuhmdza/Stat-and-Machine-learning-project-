@@ -1,0 +1,124 @@
+import requests
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# NOAA API Key
+NOAA_API_KEY = "sxEfqUsOUVVRtChzIUbUtonoHczxjuLC"
+
+# NOAA API endpoint
+BASE_URL = "https://www.ncdc.noaa.gov/cdo-web/api/v2/data"
+
+# Define request parameters
+params = {
+    "datasetid": "GHCND",
+    "stationid": "GHCND:USW00012960",  # Houston, TX weather station
+    "startdate": "2023-01-01",
+    "enddate": "2023-12-31",
+    "datatypeid": ["TMAX", "TMIN", "PRCP"],  # Max Temp, Min Temp, Precipitation
+    "limit": 1000
+}
+
+# Set API headers
+headers = {"token": NOAA_API_KEY}
+
+try:
+    # Make API request
+    response = requests.get(BASE_URL, headers=headers, params=params, timeout=10)
+
+    # Convert response to JSON and process data
+    if response.status_code == 200:
+        data = response.json()
+        if "results" in data:
+            df_noaa = pd.DataFrame(data["results"])
+
+            # Rename columns for clarity
+            df_noaa.rename(columns={"datatype": "measurement_type", "value": "measurement_value"}, inplace=True)
+
+            # Convert 'date' to datetime (Fix missing date column if needed)
+            if "date" in df_noaa.columns:
+                df_noaa["date"] = pd.to_datetime(df_noaa["date"])
+            else:
+                df_noaa["date"] = pd.date_range(start="2023-01-01", periods=len(df_noaa), freq="D")
+
+            # Save the cleaned data
+            df_noaa.to_csv("noaa_climate_data_clean.csv", index=False)
+            print("NOAA climate data saved successfully.")
+
+        else:
+            print("No climate data found in the API response.")
+
+    else:
+        print(f"API Request Failed: {response.status_code} - {response.text}")
+
+except requests.exceptions.ConnectionError:
+    print("Network Error: Unable to connect to NOAA's API. Check your internet connection.")
+
+except requests.exceptions.Timeout:
+    print("Timeout Error: The request took too long to respond. Try again later.")
+
+except requests.exceptions.RequestException as e:
+    print(f"API Request Error: {e}")
+
+# --------------------------------------
+# Data Visualization (Only if Data is Available)
+# --------------------------------------
+try:
+    df_noaa = pd.read_csv("noaa_climate_data_clean.csv")
+    df_noaa["date"] = pd.to_datetime(df_noaa["date"])
+    df_noaa.set_index("date", inplace=True)
+
+    # Filter for climate variables
+    tmax_data = df_noaa[df_noaa["measurement_type"] == "TMAX"]
+    tmin_data = df_noaa[df_noaa["measurement_type"] == "TMIN"]
+    prcp_data = df_noaa[df_noaa["measurement_type"] == "PRCP"]
+
+    # Temperature Distribution Plot
+    plt.figure(figsize=(8, 5))
+    sns.histplot(tmax_data["measurement_value"], bins=20, kde=True, color="red", label="Max Temp")
+    sns.histplot(tmin_data["measurement_value"], bins=20, kde=True, color="blue", label="Min Temp")
+    plt.title("Temperature Distribution in Houston (2023)")
+    plt.xlabel("Temperature (°F)")
+    plt.ylabel("Frequency")
+    plt.legend()
+    plt.show()
+
+    # Precipitation Trends Over Time
+    plt.figure(figsize=(10, 5))
+    prcp_data["measurement_value"].plot(color="blue", alpha=0.7)
+    plt.title("Precipitation Trends in Houston (2023)")
+    plt.xlabel("Date")
+    plt.ylabel("Precipitation (mm)")
+    plt.show()
+
+    # Scatter Plot: Max Temp vs. Min Temp
+    plt.figure(figsize=(8, 5))
+    sns.scatterplot(x=tmax_data["measurement_value"], y=tmin_data["measurement_value"], alpha=0.5)
+    plt.title("Max Temp vs. Min Temp")
+    plt.xlabel("Max Temperature (°F)")
+    plt.ylabel("Min Temperature (°F)")
+    plt.show()
+
+    # Rolling Average for Temperature (7-day moving average)
+    plt.figure(figsize=(10, 5))
+    tmax_data["measurement_value"].rolling(window=7).mean().plot(label="7-Day Avg Max Temp", color="red")
+    tmin_data["measurement_value"].rolling(window=7).mean().plot(label="7-Day Avg Min Temp", color="blue")
+    plt.title("7-Day Rolling Average Temperature")
+    plt.xlabel("Date")
+    plt.ylabel("Temperature (°F)")
+    plt.legend()
+    plt.show()
+
+    # Correlation Heatmap (Max Temp, Min Temp, and Precipitation)
+    climate_correlation = df_noaa.pivot_table(index="date", columns="measurement_type", values="measurement_value").corr()
+    plt.figure(figsize=(6, 5))
+    sns.heatmap(climate_correlation, annot=True, cmap="coolwarm", linewidths=0.5)
+    plt.title("Climate Variable Correlations")
+    plt.show()
+
+except FileNotFoundError:
+    print("NOAA climate data file not found. Run the API request first.")
+
+except Exception as e:
+    print(f"Error during visualization: {e}")
+
