@@ -6,7 +6,7 @@ This project explores multiple machine learning and statistical models to foreca
 ##  Files Included
 - `disease_case_prediction_final.ipynb` - the complete Jupyter notebook with visualizations, models, and comparisons.
 - `final_model_dataset_with_features.csv` - the dataset used for all analyses.
-
+- `visualizations for project (1).ipynb` - the Jupyter notebook for EDA.
 ##  Models Used
 1. **ARIMA** – basic time series forecasting using case counts.
 2. **SARIMA** – time series with seasonal components.
