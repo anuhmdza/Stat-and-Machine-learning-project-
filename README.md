@@ -13,7 +13,7 @@ This project explores multiple machine learning and statistical models to foreca
 2. **SARIMA** – time series with seasonal components.
 3. **Random Forest Regressor** – tree-based model using all available numeric features.
 4. **LSTM (Long Short-Term Memory)** – neural network model designed for sequential data.
-
+5. **BSTS** - a statistical method for analyzing and forecasting time series data by decomposing it into components like trend, seasonality, and regression
 ##  Visualizations
 - Trend line of average case counts by year.
 - Correlation heatmap of all numeric features.
