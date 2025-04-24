@@ -1,7 +1,7 @@
 
 #  Disease Case Count Prediction Project
 
-This project explores multiple machine learning and statistical models to forecast disease case counts across U.S. states using historical features like temperature, income, rent, immunization, and exemption rates.
+This project explores multiple machine learning and statistical models to forecast disease case counts across U.S. states using historical features like temperature, income, rent, immunization, and exemption rates. We are predicting disease count per state per year.
 
 ##  Files Included
 - `final_model_dataset_with_features.csv` - the dataset used for all analyses.
