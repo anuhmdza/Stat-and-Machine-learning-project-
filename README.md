@@ -7,6 +7,7 @@ This project explores multiple machine learning and statistical models to foreca
 - `final_model_dataset_with_features.csv` - the dataset used for all analyses.
 - `visualizations for project (1).ipynb` - the Jupyter notebook for EDA.
 - `XGBOOST RANDOM FOREST ARIMA SARIMA MODELING.ipynb` - XGBoost,Random Forrest,ARIMA/SARIMA Modeling + Predictions Per State Per Year
+- `bsts.Rmd` - Bayesian Structural Time Series Modeling+ Predictions
 ##  Models Used
 1. **ARIMA** – basic time series forecasting using case counts.
 2. **SARIMA** – time series with seasonal components.
