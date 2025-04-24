@@ -1,0 +1,151 @@
+---
+title: "bsts-ml"
+author: "Emily Ortega"
+date: 
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+# Load libraries
+library(bsts)
+library(dplyr)
+library(tidyr)
+library(scales)
+
+# Initialize results list
+metrics_list <- list()
+
+# Loop through each unique state
+for (st in unique(df$state)) {
+  # Clean and prep data
+  state_data <- df %>%
+    filter(state == st) %>%
+    select(-state, -year) %>%
+    drop_na()
+
+  # Skip if fewer than 5 years of data
+  if (nrow(state_data) < 5) next
+
+  # Time series response
+  y <- ts(state_data$cases, start = min(df$year[df$state == st]), frequency = 1)
+
+  # Skip if no variation in y
+  if (sd(y) == 0) next
+
+  # Drop response and scale predictors
+  predictors <- state_data %>% select(-cases)
+  zero_var_cols <- sapply(predictors, function(col) sd(col) == 0)
+  predictors <- predictors[, !zero_var_cols]
+
+  # Skip if no usable predictors
+  if (ncol(predictors) == 0) next
+
+  predictors_scaled <- as.data.frame(scale(predictors))
+
+  # Skip if scaling caused NA
+  if (any(is.na(predictors_scaled))) next
+
+  # Check dimensions match
+  if (length(y) != nrow(predictors_scaled)) next
+
+  # Fit BSTS model
+  ss <- AddLocalLevel(list(), y)
+  model <- bsts(y ~ ., state.specification = ss, data = predictors_scaled, niter = 500)
+
+  # Posterior mean of trend component = predicted values
+  pred <- colMeans(model$state.contributions[, "trend", ])
+
+  # Compute metrics
+  mae <- mean(abs(y - pred))
+  rmse <- sqrt(mean((y - pred)^2))
+  mape <- if (all(y != 0)) mean(abs((y - pred) / y)) * 100 else NA
+
+  # Store results
+  metrics_list[[st]] <- data.frame(
+    state = st,
+    MAE = mae,
+    RMSE = rmse,
+    MAPE = mape
+  )
+}
+
+# Combine results
+all_metrics <- do.call(rbind, metrics_list)
+
+# View
+print(all_metrics)
+
+
+```
+
+```{r}
+# Remove any NA values before averaging
+avg_mae <- mean(all_metrics$MAE, na.rm = TRUE)
+avg_rmse <- mean(all_metrics$RMSE, na.rm = TRUE)
+avg_mape <- mean(all_metrics$MAPE, na.rm = TRUE)
+
+# Print results
+cat("Average Model Metrics Across States:\n")
+cat("Mean Absolute Error (MAE):", round(avg_mae, 2), "\n")
+cat("Root Mean Squared Error (RMSE):", round(avg_rmse, 2), "\n")
+cat("Mean Absolute Percentage Error (MAPE):", round(avg_mape, 2), "%\n")
+
+```
+
+
+```{r}
+library(ggplot2)
+
+# Create an empty list to hold all plots
+plot_list <- list()
+
+# Loop again to create plots
+for (st in names(metrics_list)) {
+  # Re-load and clean data for that state
+  state_data <- df %>%
+    filter(state == st) %>%
+    select(-state, -year) %>%
+    drop_na()
+
+  y <- ts(state_data$cases, start = min(df$year[df$state == st]), frequency = 1)
+  if (sd(y) == 0) next
+
+  predictors <- state_data %>% select(-cases)
+  zero_var_cols <- sapply(predictors, function(col) sd(col) == 0)
+  predictors <- predictors[, !zero_var_cols]
+  predictors_scaled <- as.data.frame(scale(predictors))
+  if (any(is.na(predictors_scaled)) || nrow(predictors_scaled) != length(y)) next
+
+  ss <- AddLocalLevel(list(), y)
+  model <- bsts(y ~ ., state.specification = ss, data = predictors_scaled, niter = 500)
+  predicted <- colMeans(model$state.contributions[, "trend", ])
+  year_seq <- as.numeric(time(y))
+
+  plot_df <- data.frame(
+    Year = year_seq,
+    Actual = as.numeric(y),
+    Predicted = predicted
+  )
+
+  # Create the plot
+  p <- ggplot(plot_df, aes(x = Year)) +
+    geom_line(aes(y = Actual), color = "blue", size = 1.2) +
+    geom_line(aes(y = Predicted), color = "red", size = 1.2, linetype = "dashed") +
+    labs(title = paste("Actual vs Predicted Cases in", st),
+         y = "Cases", x = "Year") +
+    theme_minimal()
+
+  # Store the plot
+  plot_list[[st]] <- p
+}
+
+for (st in names(plot_list)) {
+  print(plot_list[[st]])
+}
+```
