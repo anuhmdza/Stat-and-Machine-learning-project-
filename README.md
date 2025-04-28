@@ -21,7 +21,7 @@ This project explores multiple machine learning and statistical models to foreca
 - Model comparison graphs and predictions.
 
 ##  Key Findings
-- **ARIMA** gave the best predictive performance with the lowest RMSE.
+- **XBOOST** gave the best predictive performance with the lowest RMSE.
 - LSTM and SARIMA showed potential for more sequential modeling but may need further tuning.
 - Visualizing data helped uncover trends and correlations that informed model choices.
 
